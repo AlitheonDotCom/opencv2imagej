@@ -6,9 +6,21 @@ OpenCV YAML file format: http://docs.opencv.org/2.4/modules/core/doc/xml_yaml_pe
 ImageJ Text Image file format: https://imagej.nih.gov/ij/docs/guide/146-26.html#fig:TextImages
 
 # Usage
+
+## opencv2imagej
+Converts a serialized FileStorage object to Text Image format.
+
 ```
 ruby ./opencv2imagej.rb yaml_file [image_key]
 ```
 
 * `yaml_file`: path to an OpenCV image in yaml format
 * `image_key`: the name of the serialized image, default is "img"
+
+## txt2png
+Macro for bulk converting Text Images (.txt files) to PNG format.
+
+1. Start ImageJ
+2. Run Macro
+3. Browse to directory containing txt files
+4. Browse to directory where PNG files should be saved
