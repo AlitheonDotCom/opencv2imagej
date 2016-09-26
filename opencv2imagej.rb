@@ -7,8 +7,35 @@
 
 require 'yaml'
 
+def convert_file(image_key, infile, outfile)
+  # Ruby's yaml parser can't parse the YAML 1.0 directive "%YAML:1.0"
+  # So we can't just use YAML.load_file(infile)
+  # http://stackoverflow.com/questions/17560350/cannot-parse-yaml1-0-in-ruby
+  contents = IO.read(infile)
+  contents.gsub!(/%/, '#%')
+  contents = YAML.load(contents)
+
+  rows = contents[image_key]['rows']
+  cols = contents[image_key]['cols']
+  data = contents[image_key]['data']
+
+  File.open(outfile, 'w') do |file|
+    for r in 0..(rows -1)
+      for c in 0..(cols -1)
+        file.write(data[r * cols + c])
+        file.write("\t") unless c == (cols - 1)
+      end
+      file.write("\n")
+    end
+  end
+end
+
+def get_outfile(infile)
+  infile.chomp(File.extname(infile)) + '.txt'
+end
+
 if ARGV.size == 0
-  puts 'Usage: ruby ./opencv2imagej.rb yaml_file [image_key]'
+  puts 'Usage: ruby ./opencv2imagej.rb yaml-file-or-directory-of-yaml-files [image_key]'
   puts 'yaml_file: path to an OpenCV image in yaml format'
   puts 'image_key: the name of the serialized image, default is "img"'
   exit
@@ -16,25 +43,13 @@ end
 
 image_key = ARGV[1] || 'img'
 infile = ARGV[0]
-outfile = infile.chomp(File.extname(infile)) + '.txt'
 
-# Ruby's yaml parser can't parse the YAML 1.0 directive "%YAML:1.0"
-# So we can't just use YAML.load_file(infile)
-# http://stackoverflow.com/questions/17560350/cannot-parse-yaml1-0-in-ruby
-contents = IO.read(infile)
-contents.gsub!(/%/, '#%')
-contents = YAML.load(contents)
+if File.directory?(infile)
+  infile += File::SEPARATOR unless infile.end_with?(File::SEPARATOR)
 
-rows = contents[image_key]['rows']
-cols = contents[image_key]['cols']
-data = contents[image_key]['data']
-
-File.open(outfile, 'w') do |file|
-  for r in 0..(rows -1)
-    for c in 0..(cols -1)
-      file.write(data[r * cols + c])
-      file.write("\t") unless c == (cols - 1)
-    end
-    file.write("\n")
+  Dir.glob(infile + '*.yml') do |filename|
+    convert_file(image_key, filename, get_outfile(filename))
   end
+else
+  convert_file(image_key, infile, get_outfile(infile))
 end
